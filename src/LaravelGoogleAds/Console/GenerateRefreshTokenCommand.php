@@ -30,7 +30,17 @@ class GenerateRefreshTokenCommand extends Command
     }
 
     /**
-     * Generate command.
+     * Execute the console command.
+     *
+     * @version Laravel 5.4+
+     */
+    public function handle()
+    {
+        $this->fire();
+    }
+
+    /**
+     * Generate command
      */
     public function fire()
     {
@@ -60,17 +70,27 @@ class GenerateRefreshTokenCommand extends Command
 
         $clientId = $config['clientId'];
         $clientSecret = $config['clientSecret'];
-        $scopes = $products[$api][1];
-        $oauth2 = $authorizationService->oauth2($clientId, $clientSecret, AuthorizationService::REDIRECT_URI, $scopes);
+
+        // Scopes
+
+        $scopes = $this->scopes();
+
+        $oauth2 = $authorizationService->oauth2(
+            $clientId,
+            $clientSecret,
+            AuthorizationService::REDIRECT_URI,
+            implode(" ", $scopes)
+        );
 
         $this->line(sprintf(
-            "Please sign in to your Google account, and open following url:\n%s",
+            "Please sign in to your Google Account, and navigate to the following url:\n%s",
             $authorizationService->buildFullAuthorizationUri($oauth2, true, [
                 'prompt' => 'consent',
             ])
         ));
 
         // Retrieve token
+
         $accessToken = $this->ask('Insert the code you received from Google');
 
         // Fetch auth token
@@ -94,7 +114,33 @@ class GenerateRefreshTokenCommand extends Command
     }
 
     /**
-     * Configuration.
+     * Select scopes
+     *
+     * @return array
+     */
+    private function scopes()
+    {
+        $scopes = [];
+
+        foreach ($this->products() as $product => $scope) {
+            if (!$this->confirm(sprintf('Would you like to activate %s?', $product), true)) {
+                continue;
+            }
+
+            array_push($scopes, $scope);
+        }
+
+        if (!count($scopes)) {
+            $this->error('You have to select at least one scope');
+
+            return $this->scopes();
+        }
+
+        return $scopes;
+    }
+
+    /**
+     * Configuration
      *
      * @return bool|array
      */
@@ -108,5 +154,18 @@ class GenerateRefreshTokenCommand extends Command
         }
 
         return $config['OAUTH2'];
+    }
+
+    /**
+     * Products
+     *
+     * @return array
+     */
+    private function products()
+    {
+        return [
+            'AdWords' => AuthorizationService::ADWORDS_API_SCOPE,
+            'DFP' => AuthorizationService::DFP_API_SCOPE,
+        ];
     }
 }

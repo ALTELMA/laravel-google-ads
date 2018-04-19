@@ -21,7 +21,6 @@ class AuthorizationService
 
     /**
      * @var string the OAuth2 scope for the DFP API
-     *
      * @see https://developers.google.com/doubleclick-publishers/docs/authentication#scope
      */
     const DFP_API_SCOPE = 'https://www.googleapis.com/auth/dfp';
@@ -111,12 +110,9 @@ class AuthorizationService
             return false;
         }
 
-        return array_merge(
-            [
-                'clientId' => null,
-                'clientSecret' => null,
-            ],
-            $config['OAUTH2']
-        );
+        return array_merge([
+            'clientId' => null,
+            'clientSecret' => null,
+        ], $config['OAUTH2']);
     }
 }
